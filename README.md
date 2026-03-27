@@ -27,12 +27,15 @@ go get github.com/aqylsoft/circuitbreaker/redisstore
 ## Quick Start
 
 ```go
-cb := circuitbreaker.New("stripe",
+cb, err := circuitbreaker.New("stripe",
     circuitbreaker.WithConsecutiveFailures(5),
     circuitbreaker.WithOpenTimeout(30*time.Second),
 )
+if err != nil {
+    log.Fatal(err)
+}
 
-err := cb.Execute(ctx, func() error {
+err = cb.Execute(ctx, func() error {
     return stripeClient.Charge(req)
 })
 
@@ -44,7 +47,7 @@ if errors.Is(err, circuitbreaker.ErrCircuitOpen) {
 ## Sliding Window Mode
 
 ```go
-cb := circuitbreaker.New("fraud-api",
+cb, _ := circuitbreaker.New("fraud-api",
     // open if >50% errors in last 30s (10 buckets)
     circuitbreaker.WithSlidingWindow(30*time.Second, 0.5, 10),
     circuitbreaker.WithOpenTimeout(10*time.Second),
@@ -54,7 +57,7 @@ cb := circuitbreaker.New("fraud-api",
 ## Custom Failure Filter
 
 ```go
-cb := circuitbreaker.New("inventory",
+cb, _ := circuitbreaker.New("inventory",
     circuitbreaker.WithConsecutiveFailures(3),
     circuitbreaker.WithIsFailure(func(err error) bool {
         // don't count not-found or cancelled requests as failures
@@ -68,10 +71,21 @@ cb := circuitbreaker.New("inventory",
 ## State Change Hook
 
 ```go
-cb := circuitbreaker.New("psp",
+cb, _ := circuitbreaker.New("psp",
     circuitbreaker.WithOnStateChange(func(name string, from, to circuitbreaker.State) {
         log.Printf("breaker %s: %s → %s", name, from, to)
         metrics.BreakerState.WithLabelValues(name).Set(float64(to))
+    }),
+)
+```
+
+## Error Callback
+
+```go
+cb, _ := circuitbreaker.New("api",
+    circuitbreaker.WithConsecutiveFailures(5),
+    circuitbreaker.WithOnError(func(name, op string, err error) {
+        log.Printf("breaker %s: %s failed: %v", name, op, err)
     }),
 )
 ```
@@ -82,7 +96,10 @@ cb := circuitbreaker.New("psp",
 registry := circuitbreaker.NewRegistry()
 
 // get-or-create by name
-cb := registry.Get("stripe", circuitbreaker.WithConsecutiveFailures(5))
+cb, err := registry.Get("stripe", circuitbreaker.WithConsecutiveFailures(5))
+if err != nil {
+    log.Fatal(err)
+}
 
 // list all
 for name, b := range registry.Breakers() {
@@ -100,7 +117,7 @@ import "github.com/aqylsoft/circuitbreaker/redisstore"
 rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
 store := redisstore.New(rdb)
 
-cb := circuitbreaker.New("stripe",
+cb, _ := circuitbreaker.New("stripe",
     circuitbreaker.WithConsecutiveFailures(5),
     circuitbreaker.WithStore(store), // one line change
 )
@@ -127,6 +144,23 @@ cb:{name}:counts  → hash with counters
 CLOSED ──(threshold reached)──► OPEN ──(timeout)──► HALF-OPEN
   ▲                                                       │
   └──────────── probe succeeded ────────────────────────-┘
+```
+
+## Benchmarks
+
+```
+goos: linux
+goarch: amd64
+cpu: 13th Gen Intel(R) Core(TM) i7-1355U
+
+BenchmarkExecute_Closed-12       7717792    161.8 ns/op    0 B/op    0 allocs/op
+BenchmarkExecute_Open-12         8716132    140.3 ns/op    0 B/op    0 allocs/op
+BenchmarkExecute_Parallel-12     1000000   1041.0 ns/op    0 B/op    0 allocs/op
+```
+
+Run benchmarks:
+```bash
+go test -bench=. -benchmem ./...
 ```
 
 ## License
