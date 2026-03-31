@@ -45,8 +45,8 @@ func TestRegistry_Reset(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	exec(b, alwaysFail)
-	exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
 
 	r.Reset("stripe")
 
