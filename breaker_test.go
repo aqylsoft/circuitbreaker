@@ -27,7 +27,7 @@ func TestConsecutiveFailures_Opens(t *testing.T) {
 	}
 
 	for range 3 {
-		exec(b, alwaysFail)
+		_ = exec(b, alwaysFail)
 	}
 
 	if b.State() != cb.StateOpen {
@@ -50,8 +50,8 @@ func TestHalfOpen_SuccessCloses(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	exec(b, alwaysFail)
-	exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
 
 	if b.State() != cb.StateOpen {
 		t.Fatal("expected open")
@@ -77,11 +77,11 @@ func TestHalfOpen_FailureReopens(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	exec(b, alwaysFail)
-	exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
 	time.Sleep(20 * time.Millisecond)
 
-	exec(b, alwaysFail) // probe fails
+	_ = exec(b, alwaysFail) // probe fails
 
 	if b.State() != cb.StateOpen {
 		t.Fatalf("expected re-open, got %s", b.State())
@@ -102,7 +102,7 @@ func TestIsFailure_CustomFilter(t *testing.T) {
 
 	// ignored errors should not count
 	for range 5 {
-		b.Execute(context.Background(), func() error { return sentinel })
+		_ = b.Execute(context.Background(), func() error { return sentinel })
 	}
 
 	if b.State() != cb.StateClosed {
@@ -123,8 +123,8 @@ func TestOnStateChange_Callback(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	exec(b, alwaysFail)
-	exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
 
 	if len(changes) == 0 || changes[len(changes)-1] != "open" {
 		t.Fatalf("expected open transition, got %v", changes)
@@ -136,8 +136,8 @@ func TestReset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	exec(b, alwaysFail)
-	exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
 
 	b.Reset()
 
@@ -159,10 +159,10 @@ func TestSlidingWindow_Opens(t *testing.T) {
 	}
 
 	// 3 failures out of 4 = 75% > 50%
-	exec(b, alwaysFail)
-	exec(b, alwaysFail)
-	exec(b, alwaysFail)
-	exec(b, alwaysSucceed)
+	_ = exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
+	_ = exec(b, alwaysSucceed)
 
 	if b.State() != cb.StateOpen {
 		t.Fatalf("expected open, got %s", b.State())
@@ -235,8 +235,8 @@ func TestConcurrent_HalfOpen_ProbeLimit(t *testing.T) {
 	}
 
 	// Open the breaker
-	exec(b, alwaysFail)
-	exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
+	_ = exec(b, alwaysFail)
 
 	// Wait for half-open
 	time.Sleep(20 * time.Millisecond)
@@ -282,7 +282,7 @@ func TestOnError_Callback(t *testing.T) {
 	}
 
 	// Normal execution should not trigger onError
-	exec(b, alwaysSucceed)
+	_ = exec(b, alwaysSucceed)
 
 	if len(errCalls) != 0 {
 		t.Fatalf("expected no error callbacks, got %v", errCalls)
@@ -305,7 +305,7 @@ func BenchmarkExecute_Closed(b *testing.B) {
 
 	b.ResetTimer()
 	for b.Loop() {
-		breaker.Execute(ctx, fn)
+		_ = breaker.Execute(ctx, fn)
 	}
 }
 
@@ -319,14 +319,14 @@ func BenchmarkExecute_Open(b *testing.B) {
 	}
 
 	// Open the breaker
-	breaker.Execute(context.Background(), func() error { return errFake })
+	_ = breaker.Execute(context.Background(), func() error { return errFake })
 
 	ctx := context.Background()
 	fn := func() error { return nil }
 
 	b.ResetTimer()
 	for b.Loop() {
-		breaker.Execute(ctx, fn)
+		_ = breaker.Execute(ctx, fn)
 	}
 }
 
@@ -345,7 +345,7 @@ func BenchmarkExecute_Parallel(b *testing.B) {
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			breaker.Execute(ctx, fn)
+			_ = breaker.Execute(ctx, fn)
 		}
 	})
 }
