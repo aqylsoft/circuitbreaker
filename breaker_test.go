@@ -26,7 +26,7 @@ func TestConsecutiveFailures_Opens(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		exec(b, alwaysFail)
 	}
 
@@ -101,7 +101,7 @@ func TestIsFailure_CustomFilter(t *testing.T) {
 	}
 
 	// ignored errors should not count
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		b.Execute(context.Background(), func() error { return sentinel })
 	}
 
@@ -202,7 +202,7 @@ func TestConcurrent_Execute(t *testing.T) {
 	var successCount atomic.Int64
 	var errorCount atomic.Int64
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -245,7 +245,7 @@ func TestConcurrent_HalfOpen_ProbeLimit(t *testing.T) {
 	var probeCount atomic.Int64
 	var tooManyProbesCount atomic.Int64
 
-	for i := 0; i < 10; i++ {
+	for range 10 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -304,7 +304,7 @@ func BenchmarkExecute_Closed(b *testing.B) {
 	fn := func() error { return nil }
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		breaker.Execute(ctx, fn)
 	}
 }
@@ -325,7 +325,7 @@ func BenchmarkExecute_Open(b *testing.B) {
 	fn := func() error { return nil }
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		breaker.Execute(ctx, fn)
 	}
 }
