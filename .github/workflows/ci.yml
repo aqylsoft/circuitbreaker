@@ -26,13 +26,13 @@ jobs:
           go-version: '1.26'
 
       - name: Install golangci-lint
-        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.2
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.11.2
 
       - name: Run golangci-lint
-        run: $(go env GOPATH)/bin/golangci-lint run --timeout=5m
+        run: $(go env GOPATH)/bin/golangci-lint run --timeout=5m ./...
 
       - name: Run golangci-lint (redisstore)
-        run: cd redisstore && $(go env GOPATH)/bin/golangci-lint run --timeout=5m
+        run: cd redisstore && $(go env GOPATH)/bin/golangci-lint run --timeout=5m ./...
 
   test:
     name: Test
