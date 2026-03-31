@@ -50,9 +50,8 @@ type breaker struct {
 	store  StateStore
 	window *slidingWindow // non-nil in sliding window mode
 
-	mu          sync.Mutex
-	probeCount  uint32 // active probes in half-open
-	openedAt    time.Time
+	mu         sync.Mutex
+	probeCount uint32 // active probes in half-open
 }
 
 // New creates a new Breaker with the given name and options.
@@ -141,11 +140,12 @@ func (b *breaker) afterCall(err error) {
 		b.window.record(now, isFailure)
 	}
 
-	state, counts, storeErr := b.store.GetState(b.name)
+	state, _, storeErr := b.store.GetState(b.name)
 	if storeErr != nil {
 		b.reportError("GetState", storeErr)
 	}
 
+	var counts Counts
 	if isFailure {
 		counts, storeErr = b.store.IncrFailure(b.name)
 		if storeErr != nil {
@@ -197,7 +197,9 @@ func (b *breaker) transition(from, to State) {
 	if to == StateOpen {
 		ttl = b.cfg.openTimeout
 	}
-	b.store.SetState(b.name, to, ttl)
+	if err := b.store.SetState(b.name, to, ttl); err != nil {
+		b.reportError("SetState", err)
+	}
 
 	if b.cfg.onStateChange != nil {
 		b.cfg.onStateChange(b.name, from, to)
@@ -216,7 +218,9 @@ func (b *breaker) Counts() Counts {
 
 func (b *breaker) Reset() {
 	prev := b.State()
-	b.store.Reset(b.name)
+	if err := b.store.Reset(b.name); err != nil {
+		b.reportError("Reset", err)
+	}
 	if b.window != nil {
 		b.window.reset()
 	}

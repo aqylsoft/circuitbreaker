@@ -127,8 +127,8 @@ func TestStore_IncrFailure_ResetsConsecutiveSuccess(t *testing.T) {
 	_, store := setupMiniredis(t)
 
 	// Build up some successes
-	store.IncrSuccess("test")
-	store.IncrSuccess("test")
+	_, _ = store.IncrSuccess("test")
+	_, _ = store.IncrSuccess("test")
 
 	// Then fail
 	counts, err := store.IncrFailure("test")
@@ -148,8 +148,8 @@ func TestStore_IncrSuccess_ResetsConsecutiveFailure(t *testing.T) {
 	_, store := setupMiniredis(t)
 
 	// Build up some failures
-	store.IncrFailure("test")
-	store.IncrFailure("test")
+	_, _ = store.IncrFailure("test")
+	_, _ = store.IncrFailure("test")
 
 	// Then succeed
 	counts, err := store.IncrSuccess("test")
@@ -169,9 +169,9 @@ func TestStore_Reset(t *testing.T) {
 	_, store := setupMiniredis(t)
 
 	// Set some state
-	store.SetState("test", cb.StateOpen, time.Second)
-	store.IncrFailure("test")
-	store.IncrFailure("test")
+	_ = store.SetState("test", cb.StateOpen, time.Second)
+	_, _ = store.IncrFailure("test")
+	_, _ = store.IncrFailure("test")
 
 	// Reset
 	err := store.Reset("test")
@@ -216,9 +216,9 @@ func TestStore_MultipleBreakers(t *testing.T) {
 	_, store := setupMiniredis(t)
 
 	// Different breakers should have independent state
-	store.IncrFailure("breaker1")
-	store.IncrFailure("breaker1")
-	store.IncrSuccess("breaker2")
+	_, _ = store.IncrFailure("breaker1")
+	_, _ = store.IncrFailure("breaker1")
+	_, _ = store.IncrSuccess("breaker2")
 
 	_, counts1, _ := store.GetState("breaker1")
 	_, counts2, _ := store.GetState("breaker2")
