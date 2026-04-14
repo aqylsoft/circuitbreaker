@@ -6,4 +6,4 @@ import "errors"
 var ErrCircuitOpen = errors.New("circuit breaker is open")
 
 // ErrTooManyProbes is returned when the half-open probe limit has been reached.
-var ErrTooManyProbes = errors.New("circuit breaker: half-open probe limit reached")
+var ErrTooManyProbes = errors.New("circuit breaker: half-open probe limit reache")
